@@ -1,24 +1,16 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>CORS 테스트</title>
+  <meta charset="UTF-8">
+  <title>마음날씨 챗봇</title>
+  <link rel="stylesheet" href="CSS/style.css">
 </head>
 <body>
-    <h1>CORS 테스트</h1>
-    <button onclick="fetchMessage()">메시지 가져오기</button>
-    <p id="message"></p>
- 
-    <script>
-        async function fetchMessage() {
-            try {
-                const response = await fetch('http://localhost:8000/api/hello');
-                const data = await response.json();
-                document.getElementById('message').textContent = data.message;
-            } catch (error) {
-                console.error('Error:', error);
-            }
-        }
-    </script>
+  <h1>오늘 당신의 마음날씨는?</h1>
+  <input type="text" id="question" placeholder="마음 상태를 입력하세요">
+  <button onclick="sendQuestion()">보내기</button>
+  <div id="response"></div>
+
+  <script src="JS/app.js"></script>
 </body>
 </html>

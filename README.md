@@ -1,5 +1,10 @@
 # First_Project
 
+
+
+
+---
+## WBS
 ```mermaid
 gantt
     title 마음날씨 잠언 챗봇 프로젝트 간트차트 (2025.06.10 ~ 2025.06.12)
@@ -27,3 +32,6 @@ gantt
     발표 자료 정리 및 시연 준비  :        2025-06-12, 0.5d
 
 ```
+---
+## 와이어프레임
+<img src="/First_Project/images/1차 와이어프레임.png">
