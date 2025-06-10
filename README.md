@@ -34,4 +34,4 @@ gantt
 ```
 ---
 ## 와이어프레임
-<img src="/First_Project/images/1차 와이어프레임.png">
+![와이어프레임](./images/1차%20와이어프레임.png)
