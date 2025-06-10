@@ -1,0 +1,85 @@
+/* 기본 스타일 초기화 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 전체 페이지 스타일 */
+body {
+    font-family: 'Malgun Gothic', sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    text-align: center;
+}
+
+.container {
+    background-color: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 600px;
+}
+
+h1 {
+    margin-bottom: 30px;
+    font-size: 1.8rem;
+}
+
+/* 기분 버튼 스타일 */
+.mood-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap; /* 화면이 작아지면 버튼이 아래로 내려가도록 설정 */
+}
+
+.mood-btn {
+    padding: 12px 20px;
+    border: 1px solid #ddd;
+    background-color: #f8f8f8;
+    border-radius: 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s, transform 0.2s;
+}
+
+.mood-btn:hover {
+    background-color: #5a67d8;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* 결과창 스타일 */
+#result-container {
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 1px solid #eee;
+    min-height: 150px; /* 결과가 없을 때도 최소 높이 유지 */
+}
+
+#result-container h2 {
+    font-size: 1.5rem;
+    color: #5a67d8;
+    margin-bottom: 10px;
+}
+
+#result-container p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+#result-container #content {
+    font-style: italic;
+    color: #555;
+    margin-bottom: 15px;
+}
+
+#result-container #comment {
+    color: #666;
+}
