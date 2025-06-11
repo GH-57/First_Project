@@ -79,12 +79,12 @@ proverbs_by_mood = {
     "기쁨": {
         "verse": "잠언 17:22",
         "content": "마음의 즐거움은 양약이라도 심령의 근심은 뼈를 마르게 하느니라",
-        "comment": "기쁨(행복한 마음)은 몸을 건강하게 합니다. 그 기쁜 순간을 더욱 누리기를 기도합니다.",
+        "comment": "기쁜일이 있으시군요! 기쁨(행복한 마음)은 몸을 건강하게 합니다. 그 기쁜 순간을 더욱 누리기를 기도합니다.",
     },
     "슬픔": {
         "verse": "잠언 14:13",
         "content": "웃을 때에도 마음에 슬픔이 있고 즐거움의 끝에도 근심이 있느니라",
-        "comment": "슬픔 가운데 에서도 다시 회복되기를 기도합니다.",
+        "comment": "슬픈 일이 있으시군요.. 슬픔 가운데 에서도 다시 회복되기를 기도합니다.",
     },
     "무기력함": {
         "verse": "잠언 10:4",
@@ -234,65 +234,53 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@app.post("/chat", response_model=ProverbResponse)
-async def chat_with_ai(
-    request: ChatRequest, current_user: dict = Depends(get_current_user)
-):
+@app.post("/chat", response_model=ProverbResponse) # 응답 모델을 다시 ProverbResponse로 되돌립니다.
+async def chat_with_ai(request: ChatRequest, current_user: dict = Depends(get_current_user)):
     """
-    사용자의 메시지를 받아 ChatGPT로 감정을 분석하고,
-    그에 맞는 저장된 잠언을 반환합니다.
+    (최종 버전) User-Agent 헤더를 추가하여 API를 호출하고,
+    감정 분석 결과에 따라 저장된 잠언을 반환합니다.
     """
-
-    # ChatGPT에 보낼 프롬프트 엔지니어링
-    # AI가 정확히 5가지 감정 중 하나만 답변하도록 명확하게 지시합니다.
+    url = "https://dev.wenivops.co.kr/services/openai-api"
+    
+    # ChatGPT에 보낼 프롬프트
     prompt_for_classification = f"""
     사용자의 다음 문장을 읽고 '기쁨', '슬픔', '분노', '불안', '무기력함' 중 가장 적합한 감정 카테고리 하나만 골라서, 다른 말 없이 딱 그 단어만 출력해줘.
     문장: "{request.prompt}"
     """
 
+    # curl과 유사하게 동작하도록 헤더와 데이터를 구성
+    headers = {
+        "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+        "Content-Type": "application/json",
+        # 일부 서버는 자동화된 파이썬 요청을 막기도 하므로, 일반 브라우저처럼 보이게 하는 헤더 추가
+        "User-Agent": "Mozilla/5.0" 
+    }
+    data = [
+        {"role": "system", "content": "You are a helpful assistant that classifies emotions."},
+        {"role": "user", "content": prompt_for_classification}
+    ]
+
     try:
-        client = openai.OpenAI(
-            base_url="https://dev.wenivops.co.kr/services/openai-api",
-            api_key=os.getenv("OPENAI_API_KEY"),
-        )
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status()
 
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                # AI의 역할을 명확하게 정의해주는 것이 성능에 도움이 됩니다.
-                {
-                    "role": "system",
-                    "content": "You are a helpful assistant that classifies emotions.",
-                },
-                {"role": "user", "content": prompt_for_classification},
-            ],
-            max_tokens=10,  # '무기력함' 같은 단어 하나만 받으면 되므로 토큰을 매우 작게 설정
-            temperature=0,  # 분류 작업이므로 창의성이 필요 없어 0으로 설정
-        )
+        # 성공 시, AI의 답변(감정 단어) 추출
+        mood_from_ai = response.json()["choices"][0]["message"]["content"].strip()
+        print(f"사용자 입력: '{request.prompt}' -> AI 분석 감정: '{mood_from_ai}'")
 
-        # AI의 답변(분류된 감정 단어)을 추출하고, 앞뒤 공백을 제거합니다.
-        mood_from_ai = response.choices[0].message.content.strip()
-
-        print(
-            f"사용자 입력: '{request.prompt}' -> AI 분석 감정: '{mood_from_ai}'"
-        )  # 디버깅용 출력
-
-        # 미리 정의해둔 잠언 딕셔너리에서 해당 감정에 맞는 잠언을 찾습니다.
-        # AI가 혹시 다른 단어를 반환할 경우를 대비해 기본값을 설정합니다.
+        # 잠언 딕셔너리에서 해당 감정에 맞는 잠언 조회
         default_proverb = {
             "verse": "오류",
             "content": "감정을 분석할 수 없어요. 더 자세히 말씀해주시겠어요?",
-            "comment": "",
+            "comment": ""
         }
         proverb_data = proverbs_by_mood.get(mood_from_ai, default_proverb)
-
+        
         return proverb_data
-
+    
     except Exception as e:
-        print(f"ChatGPT API 에러: {e}")
-        raise HTTPException(
-            status_code=500, detail="ChatGPT API 처리 중 오류가 발생했습니다."
-        )
+        print(f"API 최종 에러: {e}")
+        raise HTTPException(status_code=500, detail="API 처리 중 오류가 발생했습니다.")
 
 
 # =================================================================
