@@ -1,20 +1,21 @@
-import uvicorn
+import uvicorn, os, openai, requests
 from fastapi import FastAPI, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from fastapi.middleware.cors import CORSMiddleware
-
-# --- 사용자 인증에 필요한 라이브러리 추가 ---
 from typing import Optional
 from passlib.context import CryptContext  # 비밀번호 암호화를 위함
 from jose import JWTError, jwt  # JWT 토큰 생성을 위함
 from datetime import datetime, timedelta
-'''
-# 비밀번호 암호화 라이브러리 (bcrypt 추가 설치)
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+
+
+"""
+# 비밀번호 암호화 라이브러리 (bcrypt (비크립트) 추가 설치)
 pip install "passlib[bcrypt]"
 
-# JWT 토큰 라이브러리 (cryptography 추가 설치)
+# JWT 토큰 라이브러리 (cryptography (크립토그래피: 암호기술) 추가 설치)
 pip install "python-jose[cryptography]"
-'''
+"""
 # =================================================================
 # 1. 보안 설정
 # =================================================================
@@ -24,10 +25,12 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # JWT(JSON Web Token) 설정을 위한 비밀 키와 알고리즘
 # 이 SECRET_KEY는 외부에 노출되면 안 됩니다. 실제 프로젝트에서는 환경 변수로 관리해야 합니다.
-SECRET_KEY = "your-secret-key"  # <-- 실제로는 더 복잡하고 안전한 키를 사용하세요!
+SECRET_KEY = "your-secret-key"  # <-- 실제로는 더 복잡하게
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # =================================================================
 # 2. Pydantic 모델 정의
@@ -45,6 +48,10 @@ class ProverbResponse(BaseModel):
     comment: str
 
 
+class ChatRequest(BaseModel):
+    prompt: str  # 사용자가 보낼 메시지
+
+
 # --- 사용자 인증을 위한 모델 추가 ---
 class UserIn(BaseModel):  # 회원가입 시 받을 데이터
     email: str
@@ -52,9 +59,10 @@ class UserIn(BaseModel):  # 회원가입 시 받을 데이터
     nickname: str
 
 
-class UserLogin(BaseModel):  # 로그인 시 받을 데이터
-    email: str
-    password: str
+# OAuth2PasswordRequestForm이 아래 클래스 역할을 대신함
+# class UserLogin(BaseModel):  # 로그인 시 받을 데이터
+#     email: str
+#     password: str
 
 
 class Token(BaseModel):  # 로그인 성공 시 보낼 데이터 (토큰)
@@ -138,6 +146,33 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    """
+    요청 헤더의 토큰을 해석하여 현재 사용자를 반환하는 의존성 함수.
+    유효하지 않은 토큰일 경우 401 에러를 발생시킨다.
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",  # -> 유효하지 않습니다.
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        # 토큰을 디코딩하여 payload(내용물)을 얻는다.
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except (JWTError, ValidationError):
+        raise credentials_exception
+
+    # 우리 딕셔너리 DB에 해당 유저가 있는지 확인.
+    user = user_db.get(email)
+    if user is None:
+        raise credentials_exception
+
+    return user
+
+
 # =================================================================
 # 5. API 엔드포인트
 # =================================================================
@@ -145,7 +180,11 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 # --- 기존 엔드포인트 (아직 수정 안 함) ---
 @app.post("/recommend-proverb", response_model=ProverbResponse)
-def recommend_proverb(request: MoodRequest):
+def recommend_proverb(
+    request: MoodRequest, current_user: dict = Depends(get_current_user)
+):
+    print(f"인증된 사용자 {current_user}가 잠언 추천을 요청했습니다.")
+    # 디버깅용 출력
     recommendation = proverbs_by_mood.get(
         request.mood,
         {
@@ -177,22 +216,83 @@ def register_user(user: UserIn):
 
 
 @app.post("/login", response_model=Token)
-def login_for_access_token(user_login: UserLogin):
-    """로그인 엔드포인트, 성공 시 액세스 토큰 반환"""
-    user = user_db.get(user_login.email)
-    if not user or not verify_password(user_login.password, user["hashed_password"]):
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    # form_data.username 에 이메일이, form_data.password에 비밀번호가 담김.
+    user = user_db.get(form_data.username)
+    if not user or not verify_password(form_data.password, user["hashed_password"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="이메일 또는 비밀번호가 올바르지 않습니다.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 토큰에 담을 데이터 (sub는 보통 사용자를 식별하는 값으로 사용)
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user_login.email}, expires_delta=access_token_expires
+        data={"sub": form_data.username}, expires_delta=access_token_expires
     )
+
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.post("/chat", response_model=ProverbResponse)
+async def chat_with_ai(
+    request: ChatRequest, current_user: dict = Depends(get_current_user)
+):
+    """
+    사용자의 메시지를 받아 ChatGPT로 감정을 분석하고,
+    그에 맞는 저장된 잠언을 반환합니다.
+    """
+
+    # ChatGPT에 보낼 프롬프트 엔지니어링
+    # AI가 정확히 5가지 감정 중 하나만 답변하도록 명확하게 지시합니다.
+    prompt_for_classification = f"""
+    사용자의 다음 문장을 읽고 '기쁨', '슬픔', '분노', '불안', '무기력함' 중 가장 적합한 감정 카테고리 하나만 골라서, 다른 말 없이 딱 그 단어만 출력해줘.
+    문장: "{request.prompt}"
+    """
+
+    try:
+        client = openai.OpenAI(
+            base_url="https://dev.wenivops.co.kr/services/openai-api",
+            api_key=os.getenv("OPENAI_API_KEY"),
+        )
+
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                # AI의 역할을 명확하게 정의해주는 것이 성능에 도움이 됩니다.
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant that classifies emotions.",
+                },
+                {"role": "user", "content": prompt_for_classification},
+            ],
+            max_tokens=10,  # '무기력함' 같은 단어 하나만 받으면 되므로 토큰을 매우 작게 설정
+            temperature=0,  # 분류 작업이므로 창의성이 필요 없어 0으로 설정
+        )
+
+        # AI의 답변(분류된 감정 단어)을 추출하고, 앞뒤 공백을 제거합니다.
+        mood_from_ai = response.choices[0].message.content.strip()
+
+        print(
+            f"사용자 입력: '{request.prompt}' -> AI 분석 감정: '{mood_from_ai}'"
+        )  # 디버깅용 출력
+
+        # 미리 정의해둔 잠언 딕셔너리에서 해당 감정에 맞는 잠언을 찾습니다.
+        # AI가 혹시 다른 단어를 반환할 경우를 대비해 기본값을 설정합니다.
+        default_proverb = {
+            "verse": "오류",
+            "content": "감정을 분석할 수 없어요. 더 자세히 말씀해주시겠어요?",
+            "comment": "",
+        }
+        proverb_data = proverbs_by_mood.get(mood_from_ai, default_proverb)
+
+        return proverb_data
+
+    except Exception as e:
+        print(f"ChatGPT API 에러: {e}")
+        raise HTTPException(
+            status_code=500, detail="ChatGPT API 처리 중 오류가 발생했습니다."
+        )
 
 
 # =================================================================
