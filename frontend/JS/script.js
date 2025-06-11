@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 채팅 관련 요소
   const messageInput = document.getElementById("message-input");
   const messageDisplay = document.getElementById("message-display");
+  const chatWindow = document.querySelector(".chat-window");
 
   // 버튼 및 링크
   const showSignup = document.getElementById("show-signup");
@@ -29,7 +30,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- 초기화 및 화면 전환 로직 ---
 
-  // 페이지 로드 시 토큰 확인 및 화면 전환
   function initialize() {
     const token = localStorage.getItem("authToken");
     if (token) {
@@ -48,25 +48,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- 이벤트 리스너 ---
 
-  // 회원가입 화면으로 전환
   showSignup.addEventListener("click", (e) => {
     e.preventDefault();
     showScreen("signup");
   });
-
-  // 로그인 화면으로 전환
   showLogin.addEventListener("click", (e) => {
     e.preventDefault();
     showScreen("login");
   });
 
-  // 회원가입 폼 제출
   signupForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.getElementById("signup-email").value;
     const nickname = document.getElementById("signup-nickname").value;
     const password = document.getElementById("signup-password").value;
-
     try {
       const response = await fetch(`${API_BASE_URL}/register`, {
         method: "POST",
@@ -75,7 +70,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail);
-
       alert("회원가입 성공! 로그인 페이지로 이동합니다.");
       showScreen("login");
     } catch (error) {
@@ -83,17 +77,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 로그인 폼 제출
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.getElementById("login-email").value;
     const password = document.getElementById("login-password").value;
-
-    // FastAPI의 OAuth2PasswordRequestForm은 form-data를 사용합니다.
     const formData = new FormData();
     formData.append("username", email);
     formData.append("password", password);
-
     try {
       const response = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
@@ -101,21 +91,18 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail);
-
       localStorage.setItem("authToken", data.access_token);
-      initialize(); // 채팅 화면으로 전환
+      initialize();
     } catch (error) {
       alert(`로그인 실패: ${error.message}`);
     }
   });
 
-  // 로그아웃
   logoutBtn.addEventListener("click", () => {
     localStorage.removeItem("authToken");
-    initialize(); // 로그인 화면으로 전환
+    initialize();
   });
 
-  // 메시지 전송
   messageForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const prompt = messageInput.value.trim();
@@ -129,14 +116,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const proverbData = await callApi("/chat", "POST", { prompt });
-      const proverbText = `[${proverbData.verse}] ${proverbData.content}`;
-      const commentText = proverbData.comment;
-      loadingMessage.innerHTML = `<p>${proverbText}</p><p>${commentText}</p>`;
+      loadingMessage.querySelector(
+        ".message-bubble"
+      ).innerHTML = `<p>[${proverbData.verse}] ${proverbData.content}</p><p>${proverbData.comment}</p>`;
       loadingMessage.classList.remove("loading-message");
+      // ▼▼▼ AI 답변 후 스크롤을 맨 아래로 이동시킵니다. ▼▼▼
+      chatWindow.scrollTop = chatWindow.scrollHeight;
     } catch (error) {
       console.error("Error:", error);
-      loadingMessage.querySelector("p").textContent = "오류가 발생했습니다.";
+      loadingMessage.querySelector(".message-bubble p").textContent =
+        "오류가 발생했습니다.";
       loadingMessage.classList.remove("loading-message");
+      // ▼▼▼ 에러 발생 시에도 스크롤을 맨 아래로 이동시킵니다. ▼▼▼
+      chatWindow.scrollTop = chatWindow.scrollHeight;
     }
   });
 
@@ -181,15 +173,12 @@ document.addEventListener("DOMContentLoaded", () => {
   async function callApi(endpoint, method, body = null) {
     const token = localStorage.getItem("authToken");
     if (!token) throw new Error("로그인이 필요합니다.");
-
     const headers = { Authorization: `Bearer ${token}` };
     const options = { method, headers };
-
     if (body) {
       headers["Content-Type"] = "application/json";
       options.body = JSON.stringify(body);
     }
-
     const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
     if (!response.ok) {
       const errorData = await response.json();
@@ -202,11 +191,16 @@ document.addEventListener("DOMContentLoaded", () => {
   function displayMessage(sender, text) {
     const messageContainer = document.createElement("div");
     messageContainer.classList.add("message", `${sender}-message`);
+    const bubble = document.createElement("div");
+    bubble.classList.add("message-bubble");
     const messageText = document.createElement("p");
     messageText.textContent = text;
-    messageContainer.appendChild(messageText);
+    bubble.appendChild(messageText);
+    messageContainer.appendChild(bubble);
     messageDisplay.appendChild(messageContainer);
-    messageDisplay.scrollTop = messageDisplay.scrollHeight;
+
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+
     return messageContainer;
   }
 

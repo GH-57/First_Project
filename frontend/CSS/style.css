@@ -1,95 +1,134 @@
-/* 기본 스타일 초기화 */
+/* UI 개선 버전 CSS */
+:root {
+  --primary-color: #6366f1; /* 메인 색상 */
+  --primary-hover-color: #4f46e5;
+  --background-color: #f8fafc; /* 앱 배경색 */
+  --text-primary: #1e293b; /* 기본 텍스트 색상 */
+  --text-secondary: #64748b;
+  --font-family: "Noto Sans KR", sans-serif; /* 폰트 */
+}
+
+/* --- 기본 스타일 --- */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
-
 body {
-  font-family: "Malgun Gothic", sans-serif;
-  background-color: #f0f2f5;
+  font-family: var(--font-family);
+  background-color: var(--background-color);
+  color: var(--text-primary);
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
 }
 
-/* --- 화면 전환 로직 --- */
+/* --- 화면 전환 및 레이아웃 --- */
 .screen {
   display: none;
   width: 100%;
 }
 .screen.active {
   display: block;
+  animation: fadeIn 0.5s ease-in-out;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-/* --- 앱 컨테이너 --- */
 .app-container {
   width: 100%;
-  max-width: 500px;
+  max-width: 480px;
   background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 24px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   overflow: hidden;
 }
 
 /* --- 로그인 / 회원가입 화면 --- */
 #login-screen,
 #signup-screen {
-  padding: 40px;
+  padding: 48px;
 }
-#login-screen h2,
-#signup-screen h2 {
+.auth-header {
   text-align: center;
-  margin-bottom: 30px;
-  font-size: 1.8rem;
-  color: #333;
+  margin-bottom: 32px;
 }
-form input {
-  width: 100%;
-  padding: 15px;
-  margin-bottom: 15px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+.auth-header h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.auth-header p {
   font-size: 1rem;
+  color: var(--text-secondary);
 }
-form button {
+
+.auth-form input {
   width: 100%;
-  padding: 15px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-family: var(--font-family);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.auth-form input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+.auth-form button {
+  width: 100%;
+  padding: 16px;
   border: none;
-  background-color: #5a67d8;
+  background-color: var(--primary-color);
   color: white;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 1.1rem;
+  font-weight: 500;
   cursor: pointer;
   transition: background-color 0.3s;
 }
-form button:hover {
-  background-color: #434190;
+.auth-form button:hover {
+  background-color: var(--primary-hover-color);
 }
 .form-switch {
   text-align: center;
-  margin-top: 20px;
+  margin-top: 24px;
   font-size: 0.9rem;
 }
 .form-switch a {
-  color: #5a67d8;
+  color: var(--primary-color);
   text-decoration: none;
+  font-weight: 500;
 }
 
 /* --- 채팅 화면 --- */
+#chat-screen {
+  height: 95vh;
+  max-height: 850px;
+}
 .chat-container {
-  height: 90vh;
-  max-height: 800px;
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
 .chat-header {
-  background-color: #5a67d8;
+  background: linear-gradient(to right, #6366f1, #818cf8);
   color: white;
-  padding: 20px;
+  padding: 24px;
   text-align: center;
   position: relative;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 .chat-header h1 {
   font-size: 1.5rem;
@@ -97,44 +136,55 @@ form button:hover {
 .header-buttons {
   position: absolute;
   top: 50%;
-  right: 20px;
+  right: 24px;
   transform: translateY(-50%);
   display: flex;
   gap: 10px;
 }
 #history-btn,
 #logout-btn {
-  background: none;
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
   color: white;
-  padding: 8px 12px;
-  border-radius: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   cursor: pointer;
   font-size: 0.9rem;
+  transition: background-color 0.3s;
+  /* ▼▼▼ 아이콘을 가운데 정렬하기 위한 스타일 추가 ▼▼▼ */
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
+#history-btn:hover,
+#logout-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 .chat-window {
   flex-grow: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 24px;
+  background-color: #f9fafb;
 }
 .message {
-  margin-bottom: 15px;
-  max-width: 80%;
-  line-height: 1.5;
+  margin-bottom: 16px;
+  max-width: 85%;
   display: flex;
   flex-direction: column;
 }
-.message p {
+.message-bubble {
   padding: 12px 16px;
-  border-radius: 18px;
-  display: inline-block;
+  border-radius: 20px;
+  line-height: 1.6;
 }
 .user-message {
   align-self: flex-end;
   align-items: flex-end;
 }
-.user-message p {
-  background-color: #5a67d8;
+.user-message .message-bubble {
+  background-color: var(--primary-color);
   color: white;
   border-bottom-right-radius: 4px;
 }
@@ -142,48 +192,53 @@ form button:hover {
   align-self: flex-start;
   align-items: flex-start;
 }
-.ai-message p {
-  background-color: #f1f1f1;
-  color: #333;
+.ai-message .message-bubble {
+  background-color: #e5e7eb;
+  color: var(--text-primary);
   border-bottom-left-radius: 4px;
 }
-.loading-message p {
+.loading-message .message-bubble {
   font-style: italic;
-  color: #888;
+  color: var(--text-secondary);
 }
+.ai-message .message-bubble p:first-child {
+  font-weight: 500;
+}
+
 .message-form {
   display: flex;
-  padding: 15px;
-  border-top: 1px solid #ddd;
-  background-color: #f9f9f9;
+  padding: 16px;
+  border-top: 1px solid #e2e8f0;
+  background-color: white;
 }
 #message-input {
   flex-grow: 1;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 20px;
+  padding: 12px 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9999px;
   font-size: 1rem;
+  background-color: #f9fafb;
 }
 #message-input:focus {
   outline: none;
-  border-color: #5a67d8;
+  border-color: var(--primary-color);
 }
 .message-form button {
-  padding: 0 20px;
-  margin-left: 10px;
+  padding: 0 24px;
+  margin-left: 12px;
   border: none;
-  background-color: #5a67d8;
+  background-color: var(--primary-color);
   color: white;
-  border-radius: 20px;
+  border-radius: 9999px;
   font-size: 1rem;
   cursor: pointer;
   transition: background-color 0.3s;
 }
 .message-form button:hover {
-  background-color: #434190;
+  background-color: var(--primary-hover-color);
 }
 
-/* --- 모달 창 스타일 (투명도 문제 해결) --- */
+/* --- 모달 창 스타일 --- */
 .modal {
   display: none;
   position: fixed;
@@ -199,29 +254,40 @@ form button:hover {
 }
 .modal.active {
   display: flex;
+  animation: fadeIn 0.3s;
 }
 .modal-content {
   background-color: #ffffff;
-  margin: auto;
-  padding: 30px;
-  border-radius: 10px;
+  padding: 32px;
+  border-radius: 16px;
   width: 90%;
   max-width: 500px;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
   position: relative;
+  animation: slideUp 0.4s ease-out;
+}
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 .modal-content h2 {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 .close-btn {
-  color: #aaa;
+  color: #9ca3af;
   position: absolute;
-  top: 15px;
-  right: 20px;
-  font-size: 28px;
+  top: 16px;
+  right: 24px;
+  font-size: 32px;
   font-weight: bold;
   cursor: pointer;
 }
@@ -229,25 +295,25 @@ form button:hover {
   overflow-y: auto;
 }
 .history-item {
-  background-color: #fff;
-  border: 1px solid #eee;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 15px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
 }
 .history-item .prompt {
-  font-weight: bold;
-  margin-bottom: 10px;
+  font-weight: 500;
+  margin-bottom: 12px;
 }
 .history-item .response {
-  background-color: #f9f9f9;
-  padding: 10px;
-  border-radius: 5px;
+  background-color: white;
+  padding: 12px;
+  border-radius: 8px;
   font-size: 0.95rem;
 }
 .history-item .timestamp {
   text-align: right;
   font-size: 0.8rem;
-  color: #999;
-  margin-top: 10px;
+  color: #9ca3af;
+  margin-top: 12px;
 }

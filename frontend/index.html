@@ -1,71 +1,130 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI 잠언 챗봇</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
+    <!-- 구글 폰트 추가 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
     <!-- 전체 앱 컨테이너 -->
     <div class="app-container">
-        <!-- 로그인 화면 -->
-        <div id="login-screen" class="screen active">
-            <h2>로그인</h2>
-            <form id="login-form">
-                <input type="email" id="login-email" placeholder="이메일" required>
-                <input type="password" id="login-password" placeholder="비밀번호" required>
-                <button type="submit">로그인</button>
-            </form>
-            <p class="form-switch">계정이 없으신가요? <a href="#" id="show-signup">회원가입</a></p>
+      <!-- 로그인 화면 -->
+      <div id="login-screen" class="screen active">
+        <div class="auth-header">
+          <h2>AI 잠언 챗봇</h2>
+          <p>로그인하여 맞춤 잠언을 받아보세요.</p>
         </div>
+        <form id="login-form" class="auth-form">
+          <input type="email" id="login-email" placeholder="이메일" required />
+          <input
+            type="password"
+            id="login-password"
+            placeholder="비밀번호"
+            required
+          />
+          <button type="submit">로그인</button>
+        </form>
+        <p class="form-switch">
+          계정이 없으신가요? <a href="#" id="show-signup">회원가입</a>
+        </p>
+      </div>
 
-        <!-- 회원가입 화면 -->
-        <div id="signup-screen" class="screen">
-            <h2>회원가입</h2>
-            <form id="signup-form">
-                <input type="email" id="signup-email" placeholder="이메일" required>
-                <input type="text" id="signup-nickname" placeholder="닉네임" required>
-                <input type="password" id="signup-password" placeholder="비밀번호" required>
-                <button type="submit">회원가입</button>
-            </form>
-            <p class="form-switch">이미 계정이 있으신가요? <a href="#" id="show-login">로그인</a></p>
+      <!-- 회원가입 화면 -->
+      <div id="signup-screen" class="screen">
+        <div class="auth-header">
+          <h2>회원가입</h2>
+          <p>간단한 정보 입력 후 바로 시작할 수 있습니다.</p>
         </div>
+        <form id="signup-form" class="auth-form">
+          <input type="email" id="signup-email" placeholder="이메일" required />
+          <input
+            type="text"
+            id="signup-nickname"
+            placeholder="닉네임"
+            required
+          />
+          <input
+            type="password"
+            id="signup-password"
+            placeholder="비밀번호"
+            required
+          />
+          <button type="submit">회원가입</button>
+        </form>
+        <p class="form-switch">
+          이미 계정이 있으신가요? <a href="#" id="show-login">로그인</a>
+        </p>
+      </div>
 
-        <!-- 채팅 화면 (초기에는 숨겨져 있음) -->
-        <div id="chat-screen" class="screen">
-            <div class="chat-container">
-                <div class="chat-header">
-                    <h1>AI 잠언 챗봇</h1>
-                    <div class="header-buttons">
-                        <button id="history-btn">기록 보기</button>
-                        <button id="logout-btn">로그아웃</button>
-                    </div>
-                </div>
-                <div class="chat-window">
-                    <div id="message-display" class="message-display">
-                        <div class="message ai-message">
-                            <p>안녕하세요! 오늘 기분은 어떠신가요? 제게 이야기해주시면, 당신을 위한 잠언 말씀을 찾아드릴게요.</p>
-                        </div>
-                    </div>
-                </div>
-                <form id="message-form" class="message-form">
-                    <input type="text" id="message-input" placeholder="여기에 메시지를 입력하세요..." autocomplete="off">
-                    <button type="submit">전송</button>
-                </form>
+      <!-- 채팅 화면 (초기에는 숨겨져 있음) -->
+      <div id="chat-screen" class="screen">
+        <div class="chat-container">
+          <div class="chat-header">
+            <h1>AI 잠언 챗봇</h1>
+            <div class="header-buttons">
+              <button id="history-btn" title="대화 기록 보기">기록</button>
+              <!-- ▼▼▼ 로그아웃 버튼의 내용을 SVG 아이콘으로 교체 ▼▼▼ -->
+              <button id="logout-btn" title="로그아웃">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+              </button>
             </div>
+          </div>
+          <div class="chat-window">
+            <div id="message-display" class="message-display">
+              <div class="message ai-message">
+                <div class="message-bubble">
+                  <p>
+                    안녕하세요! 오늘 기분은 어떠신가요? 제게 이야기해주시면,
+                    당신을 위한 잠언 말씀을 찾아드릴게요.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <form id="message-form" class="message-form">
+            <input
+              type="text"
+              id="message-input"
+              placeholder="여기에 메시지를 입력하세요..."
+              autocomplete="off"
+            />
+            <button type="submit">전송</button>
+          </form>
         </div>
+      </div>
     </div>
 
     <!-- 채팅 기록 모달 -->
     <div id="history-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <h2>나의 대화 기록</h2>
-            <div id="history-display" class="history-display"></div>
-        </div>
+      <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h2>나의 대화 기록</h2>
+        <div id="history-display" class="history-display"></div>
+      </div>
     </div>
 
     <script src="js/script.js"></script>
-</body>
+  </body>
 </html>
