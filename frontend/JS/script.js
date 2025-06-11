@@ -14,6 +14,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const messageInput = document.getElementById("message-input");
   const messageDisplay = document.getElementById("message-display");
   const chatWindow = document.querySelector(".chat-window");
+  // ▼▼▼ 전송 버튼을 제어하기 위해 요소를 가져옵니다. ▼▼▼
+  const submitButton = messageForm.querySelector("button");
 
   // 버튼 및 링크
   const showSignup = document.getElementById("show-signup");
@@ -25,24 +27,24 @@ document.addEventListener("DOMContentLoaded", () => {
   const historyModal = document.getElementById("history-modal");
   const closeBtn = document.querySelector(".close-btn");
   const historyDisplay = document.getElementById("history-display");
+  const historyModalTitle = historyModal.querySelector("h2");
 
   const API_BASE_URL = "http://127.0.0.1:8000";
 
   // --- 초기화 및 화면 전환 로직 ---
 
-  function initialize() {
+  async function initialize() {
     const token = localStorage.getItem("authToken");
     if (token) {
       showScreen("chat");
+      await restoreChatHistory();
     } else {
       showScreen("login");
     }
   }
 
   function showScreen(screenId) {
-    screens.forEach((screen) => {
-      screen.classList.remove("active");
-    });
+    screens.forEach((screen) => screen.classList.remove("active"));
     document.getElementById(`${screenId}-screen`).classList.add("active");
   }
 
@@ -91,8 +93,12 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail);
+
       localStorage.setItem("authToken", data.access_token);
-      initialize();
+      localStorage.setItem("userNickname", data.nickname);
+
+      resetChatWindow();
+      await initialize();
     } catch (error) {
       alert(`로그인 실패: ${error.message}`);
     }
@@ -100,6 +106,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   logoutBtn.addEventListener("click", () => {
     localStorage.removeItem("authToken");
+    localStorage.removeItem("userNickname");
+    resetChatWindow();
     initialize();
   });
 
@@ -108,11 +116,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const prompt = messageInput.value.trim();
     if (!prompt) return;
 
+    // ▼▼▼ 수정된 부분: 메시지 전송 시작 시 입력창과 버튼을 비활성화 ▼▼▼
+    messageInput.disabled = true;
+    submitButton.disabled = true;
+    submitButton.textContent = "전송 중...";
+
     displayMessage("user", prompt);
-    messageInput.value = "";
+    scrollToBottom();
 
     const loadingMessage = displayMessage("ai", "답변을 생성 중입니다...");
     loadingMessage.classList.add("loading-message");
+    scrollToBottom();
 
     try {
       const proverbData = await callApi("/chat", "POST", { prompt });
@@ -120,22 +134,30 @@ document.addEventListener("DOMContentLoaded", () => {
         ".message-bubble"
       ).innerHTML = `<p>[${proverbData.verse}] ${proverbData.content}</p><p>${proverbData.comment}</p>`;
       loadingMessage.classList.remove("loading-message");
-      // ▼▼▼ AI 답변 후 스크롤을 맨 아래로 이동시킵니다. ▼▼▼
-      chatWindow.scrollTop = chatWindow.scrollHeight;
     } catch (error) {
       console.error("Error:", error);
       loadingMessage.querySelector(".message-bubble p").textContent =
         "오류가 발생했습니다.";
       loadingMessage.classList.remove("loading-message");
-      // ▼▼▼ 에러 발생 시에도 스크롤을 맨 아래로 이동시킵니다. ▼▼▼
-      chatWindow.scrollTop = chatWindow.scrollHeight;
+    } finally {
+      // ▼▼▼ 수정된 부분: API 호출이 성공하든 실패하든, 끝나면 다시 활성화 ▼▼▼
+      messageInput.disabled = false;
+      submitButton.disabled = false;
+      submitButton.textContent = "전송";
+      messageInput.value = ""; // 입력창 초기화
+      messageInput.focus(); // 사용자가 바로 다음 입력을 할 수 있도록 포커스 이동
+      scrollToBottom();
     }
   });
 
   // --- 히스토리 모달 관련 기능 ---
   historyBtn.addEventListener("click", async () => {
+    const nickname = localStorage.getItem("userNickname");
+    historyModalTitle.textContent = nickname
+      ? `${nickname}님의 대화기록`
+      : "나의 대화기록";
     historyModal.classList.add("active");
-    await fetchAndDisplayHistory();
+    await fetchAndDisplayHistoryModal();
   });
 
   closeBtn.addEventListener("click", () =>
@@ -145,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target == historyModal) historyModal.classList.remove("active");
   });
 
-  async function fetchAndDisplayHistory() {
+  async function fetchAndDisplayHistoryModal() {
     historyDisplay.innerHTML = "<p>기록을 불러오는 중입니다...</p>";
     try {
       const historyData = await callApi("/history", "GET");
@@ -187,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return response.json();
   }
 
-  // --- 메시지 표시 함수 ---
+  // --- 메시지 표시 및 창 관리 함수 ---
   function displayMessage(sender, text) {
     const messageContainer = document.createElement("div");
     messageContainer.classList.add("message", `${sender}-message`);
@@ -198,10 +220,45 @@ document.addEventListener("DOMContentLoaded", () => {
     bubble.appendChild(messageText);
     messageContainer.appendChild(bubble);
     messageDisplay.appendChild(messageContainer);
-
-    chatWindow.scrollTop = chatWindow.scrollHeight;
-
     return messageContainer;
+  }
+
+  function resetChatWindow() {
+    messageDisplay.innerHTML = `
+            <div class="message ai-message">
+                <div class="message-bubble">
+                    <p>안녕하세요! 오늘 기분은 어떠신가요? 제게 이야기해주시면, 당신을 위한 잠언 말씀을 찾아드릴게요.</p>
+                </div>
+            </div>`;
+  }
+
+  async function restoreChatHistory() {
+    try {
+      const historyData = await callApi("/history", "GET");
+      if (historyData.length === 0) {
+        resetChatWindow();
+        return;
+      }
+      messageDisplay.innerHTML = "";
+      historyData.forEach((item) => {
+        displayMessage("user", item.prompt);
+        const aiMessageContainer = displayMessage("ai", "");
+        aiMessageContainer.querySelector(
+          ".message-bubble"
+        ).innerHTML = `<p>[${item.response.verse}] ${item.response.content}</p><p>${item.response.comment}</p>`;
+      });
+      setTimeout(() => {
+        scrollToBottom(true);
+      }, 0);
+    } catch (error) {
+      console.error("기록 복원 실패:", error);
+      resetChatWindow();
+    }
+  }
+
+  function scrollToBottom(isInstant = false) {
+    const behavior = isInstant ? "instant" : "smooth";
+    chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: behavior });
   }
 
   // 앱 시작

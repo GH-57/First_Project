@@ -57,6 +57,7 @@ class UserIn(BaseModel):  # 회원가입 시 받을 데이터
 class Token(BaseModel):  # 로그인 성공 시 보낼 데이터 (토큰)
     access_token: str
     token_type: str
+    nickname: str
 
 
 # =================================================================
@@ -180,11 +181,17 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             detail="이메일 또는 비밀번호가 올바르지 않습니다.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": form_data.username}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+
+    # user 딕셔너리에서 닉네임을 가져옵니다.
+    nickname = user.get("nickname", "")
+
+    # 토큰과 함께 닉네임도 반환합니다.
+    return {"access_token": access_token, "token_type": "bearer", "nickname": nickname}
 
 
 @app.post("/chat", response_model=ProverbResponse)
