@@ -3,26 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>오늘의 잠언 추천</title>
+    <title>AI 잠언 챗봇</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-
-    <div class="container">
-        <h1>오늘 당신의 기분은 어떤가요?</h1>
-
-        <div class="mood-buttons">
-            <button class="mood-btn">기쁨</button>
-            <button class="mood-btn">슬픔</button>
-            <button class="mood-btn">무기력함</button>
-            <button class="mood-btn">분노</button>
-            <button class="mood-btn">불안</button>
+    <!-- 전체 앱 컨테이너 -->
+    <div class="app-container">
+        <!-- 로그인 화면 -->
+        <div id="login-screen" class="screen active">
+            <h2>로그인</h2>
+            <form id="login-form">
+                <input type="email" id="login-email" placeholder="이메일" required>
+                <input type="password" id="login-password" placeholder="비밀번호" required>
+                <button type="submit">로그인</button>
+            </form>
+            <p class="form-switch">계정이 없으신가요? <a href="#" id="show-signup">회원가입</a></p>
         </div>
 
-        <div id="result-container">
-            <h2 id="verse"></h2>
-            <p id="content"></p>
-            <p id="comment"></p>
+        <!-- 회원가입 화면 -->
+        <div id="signup-screen" class="screen">
+            <h2>회원가입</h2>
+            <form id="signup-form">
+                <input type="email" id="signup-email" placeholder="이메일" required>
+                <input type="text" id="signup-nickname" placeholder="닉네임" required>
+                <input type="password" id="signup-password" placeholder="비밀번호" required>
+                <button type="submit">회원가입</button>
+            </form>
+            <p class="form-switch">이미 계정이 있으신가요? <a href="#" id="show-login">로그인</a></p>
+        </div>
+
+        <!-- 채팅 화면 (초기에는 숨겨져 있음) -->
+        <div id="chat-screen" class="screen">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <h1>AI 잠언 챗봇</h1>
+                    <div class="header-buttons">
+                        <button id="history-btn">기록 보기</button>
+                        <button id="logout-btn">로그아웃</button>
+                    </div>
+                </div>
+                <div class="chat-window">
+                    <div id="message-display" class="message-display">
+                        <div class="message ai-message">
+                            <p>안녕하세요! 오늘 기분은 어떠신가요? 제게 이야기해주시면, 당신을 위한 잠언 말씀을 찾아드릴게요.</p>
+                        </div>
+                    </div>
+                </div>
+                <form id="message-form" class="message-form">
+                    <input type="text" id="message-input" placeholder="여기에 메시지를 입력하세요..." autocomplete="off">
+                    <button type="submit">전송</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 채팅 기록 모달 -->
+    <div id="history-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>나의 대화 기록</h2>
+            <div id="history-display" class="history-display"></div>
         </div>
     </div>
 

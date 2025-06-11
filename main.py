@@ -3,19 +3,23 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from pydantic import BaseModel, ValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
-from passlib.context import CryptContext  # 비밀번호 암호화를 위함
-from jose import JWTError, jwt  # JWT 토큰 생성을 위함
-from datetime import datetime, timedelta
+from passlib.context import CryptContext
+from jose import JWTError, jwt
+
+# 'utcnow()'를 대체하기 위해 'timezone'을 import합니다.
+from datetime import datetime, timedelta, timezone
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 
 """
-# 비밀번호 암호화 라이브러리 (bcrypt (비크립트) 추가 설치)
+# 필요한 라이브러리 설치 명령어
+pip install "fastapi[all]"
 pip install "passlib[bcrypt]"
-
-# JWT 토큰 라이브러리 (cryptography (크립토그래피: 암호기술) 추가 설치)
 pip install "python-jose[cryptography]"
+pip install openai
+pip install requests
 """
+
 # =================================================================
 # 1. 보안 설정
 # =================================================================
@@ -24,22 +28,14 @@ pip install "python-jose[cryptography]"
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # JWT(JSON Web Token) 설정을 위한 비밀 키와 알고리즘
-# 이 SECRET_KEY는 외부에 노출되면 안 됩니다. 실제 프로젝트에서는 환경 변수로 관리해야 합니다.
-SECRET_KEY = "your-secret-key"  # <-- 실제로는 더 복잡하게
+SECRET_KEY = "your-secret-key"  # 실제로는 더 복잡하고 안전한 키를 사용하세요!
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
 # =================================================================
 # 2. Pydantic 모델 정의
 # =================================================================
-
-
-# --- 기존 모델 ---
-class MoodRequest(BaseModel):
-    mood: str
 
 
 class ProverbResponse(BaseModel):
@@ -52,17 +48,10 @@ class ChatRequest(BaseModel):
     prompt: str  # 사용자가 보낼 메시지
 
 
-# --- 사용자 인증을 위한 모델 추가 ---
 class UserIn(BaseModel):  # 회원가입 시 받을 데이터
     email: str
     password: str
     nickname: str
-
-
-# OAuth2PasswordRequestForm이 아래 클래스 역할을 대신함
-# class UserLogin(BaseModel):  # 로그인 시 받을 데이터
-#     email: str
-#     password: str
 
 
 class Token(BaseModel):  # 로그인 성공 시 보낼 데이터 (토큰)
@@ -74,7 +63,6 @@ class Token(BaseModel):  # 로그인 성공 시 보낼 데이터 (토큰)
 # 3. 데이터베이스 대신 사용할 딕셔너리
 # =================================================================
 
-# DB를 대신할 딕셔너리
 proverbs_by_mood = {
     "기쁨": {
         "verse": "잠언 17:22",
@@ -103,9 +91,10 @@ proverbs_by_mood = {
     },
 }
 
-# 사용자 정보를 저장할 딕셔너리 (In-memory DB)
-# key: email, value: { "hashed_password": "...", "nickname": "..." }
+# 사용자 정보를 저장할 딕셔너리
 user_db = {}
+# 채팅 기록을 저장할 딕셔너리
+chat_history_db = {}
 
 
 # =================================================================
@@ -113,7 +102,6 @@ user_db = {}
 # =================================================================
 app = FastAPI()
 
-# CORS 설정
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -123,41 +111,34 @@ app.add_middleware(
 )
 
 
-# --- 인증 헬퍼 함수 ---
 def verify_password(plain_password, hashed_password):
-    """입력된 비밀번호와 저장된 해시 비밀번호를 비교합니다."""
     return pwd_context.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password):
-    """비밀번호를 해시하여 반환합니다."""
     return pwd_context.hash(password)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    """JWT 액세스 토큰을 생성합니다."""
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        # utcnow()를 최신 표준인 now(timezone.utc)로 수정
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        # utcnow()를 최신 표준인 now(timezone.utc)로 수정
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
-    """
-    요청 헤더의 토큰을 해석하여 현재 사용자를 반환하는 의존성 함수.
-    유효하지 않은 토큰일 경우 401 에러를 발생시킨다.
-    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",  # -> 유효하지 않습니다.
+        detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        # 토큰을 디코딩하여 payload(내용물)을 얻는다.
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
@@ -165,12 +146,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     except (JWTError, ValidationError):
         raise credentials_exception
 
-    # 우리 딕셔너리 DB에 해당 유저가 있는지 확인.
-    user = user_db.get(email)
-    if user is None:
+    user_details = user_db.get(email)
+    if user_details is None:
         raise credentials_exception
 
-    return user
+    return {"email": email, **user_details}
 
 
 # =================================================================
@@ -178,46 +158,21 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 # =================================================================
 
 
-# --- 기존 엔드포인트 (아직 수정 안 함) ---
-@app.post("/recommend-proverb", response_model=ProverbResponse)
-def recommend_proverb(
-    request: MoodRequest, current_user: dict = Depends(get_current_user)
-):
-    print(f"인증된 사용자 {current_user}가 잠언 추천을 요청했습니다.")
-    # 디버깅용 출력
-    recommendation = proverbs_by_mood.get(
-        request.mood,
-        {
-            "verse": "오류",
-            "content": "해당하는 기분을 찾을 수 없습니다.",
-            "comment": "",
-        },
-    )
-    return recommendation
-
-
-# --- 사용자 인증 엔드포인트 추가 ---
 @app.post("/register")
 def register_user(user: UserIn):
-    """회원가입 엔드포인트"""
     if user.email in user_db:
         raise HTTPException(status_code=400, detail="이미 등록된 이메일입니다.")
-
     hashed_password = get_password_hash(user.password)
     user_db[user.email] = {
         "hashed_password": hashed_password,
         "nickname": user.nickname,
     }
-
-    # 디버깅을 위해 DB 상태 출력 (실제 운영에서는 삭제)
     print("현재 user_db 상태:", user_db)
-
     return {"message": f"{user.nickname}님, 회원가입이 완료되었습니다."}
 
 
 @app.post("/login", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    # form_data.username 에 이메일이, form_data.password에 비밀번호가 담김.
     user = user_db.get(form_data.username)
     if not user or not verify_password(form_data.password, user["hashed_password"]):
         raise HTTPException(
@@ -225,62 +180,75 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             detail="이메일 또는 비밀번호가 올바르지 않습니다.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": form_data.username}, expires_delta=access_token_expires
     )
-
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@app.post("/chat", response_model=ProverbResponse) # 응답 모델을 다시 ProverbResponse로 되돌립니다.
-async def chat_with_ai(request: ChatRequest, current_user: dict = Depends(get_current_user)):
-    """
-    (최종 버전) User-Agent 헤더를 추가하여 API를 호출하고,
-    감정 분석 결과에 따라 저장된 잠언을 반환합니다.
-    """
+@app.post("/chat", response_model=ProverbResponse)
+async def chat_with_ai(
+    request: ChatRequest, current_user: dict = Depends(get_current_user)
+):
     url = "https://dev.wenivops.co.kr/services/openai-api"
-    
-    # ChatGPT에 보낼 프롬프트
+    headers = {
+        "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0",
+    }
     prompt_for_classification = f"""
     사용자의 다음 문장을 읽고 '기쁨', '슬픔', '분노', '불안', '무기력함' 중 가장 적합한 감정 카테고리 하나만 골라서, 다른 말 없이 딱 그 단어만 출력해줘.
     문장: "{request.prompt}"
     """
-
-    # curl과 유사하게 동작하도록 헤더와 데이터를 구성
-    headers = {
-        "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
-        "Content-Type": "application/json",
-        # 일부 서버는 자동화된 파이썬 요청을 막기도 하므로, 일반 브라우저처럼 보이게 하는 헤더 추가
-        "User-Agent": "Mozilla/5.0" 
-    }
     data = [
-        {"role": "system", "content": "You are a helpful assistant that classifies emotions."},
-        {"role": "user", "content": prompt_for_classification}
+        {
+            "role": "system",
+            "content": "You are a helpful assistant that classifies emotions.",
+        },
+        {"role": "user", "content": prompt_for_classification},
     ]
 
     try:
         response = requests.post(url, headers=headers, json=data)
         response.raise_for_status()
 
-        # 성공 시, AI의 답변(감정 단어) 추출
         mood_from_ai = response.json()["choices"][0]["message"]["content"].strip()
         print(f"사용자 입력: '{request.prompt}' -> AI 분석 감정: '{mood_from_ai}'")
 
-        # 잠언 딕셔너리에서 해당 감정에 맞는 잠언 조회
         default_proverb = {
             "verse": "오류",
             "content": "감정을 분석할 수 없어요. 더 자세히 말씀해주시겠어요?",
-            "comment": ""
+            "comment": "",
         }
         proverb_data = proverbs_by_mood.get(mood_from_ai, default_proverb)
-        
+
+        user_email = current_user.get("email")
+
+        # utcnow().isoformat을 최신 표준과 올바른 함수 호출로 수정
+        chat_record = {
+            "prompt": request.prompt,
+            "response": proverb_data,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+        if user_email not in chat_history_db:
+            chat_history_db[user_email] = []
+        chat_history_db[user_email].append(chat_record)
+
+        print(f"채팅 기록 저장됨: {user_email}")
         return proverb_data
-    
+
     except Exception as e:
         print(f"API 최종 에러: {e}")
         raise HTTPException(status_code=500, detail="API 처리 중 오류가 발생했습니다.")
+
+
+@app.get("/history")
+async def get_chat_history(current_user: dict = Depends(get_current_user)):
+    user_email = current_user.get("email")
+    history = chat_history_db.get(user_email, [])
+    return history
 
 
 # =================================================================
