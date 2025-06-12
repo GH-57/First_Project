@@ -3,7 +3,7 @@
 ### "오늘 기분은 어떠신가요?"
 * ChatGPT 서버 API를 연동하여 오늘의 기분을 분석하여 잠언 말씀을 추천함
 
-## 🎯프로젝트 소개
+## 🎯 프로젝트 소개
 
 * 프로젝트 배경: 성경말씀 중 지혜의 말씀이라 불리는 잠언을 통해 사용자들의 기분에 따른 성경말씀과 위로를 건네는 챗봇을 만들고 싶었다.
 
@@ -102,7 +102,7 @@ uvicorn main:app --reload # 백엔드 파일명이 main.py일 때
   "message": "테스트님, 회원가입이 완료되었습니다."
 }
 ```
-
+---
 ### 2. 로그인
 * Endpoint: ```POST```/login
 * 설명: 로그인하여 JWT인증 토큰을 발급받는다.
@@ -117,7 +117,7 @@ uvicorn main:app --reload # 백엔드 파일명이 main.py일 때
   "nickname": "테스트"
 }
 ```
-
+---
 ### 3. 채팅
 * Endpoint: ```POST```/chat
 * 인증: ```Bearer``` 토큰 필요
@@ -136,7 +136,7 @@ uvicorn main:app --reload # 백엔드 파일명이 main.py일 때
   "comment": "슬픈 일이 있으시군요.. 슬픔 가운데 에서도 다시 회복되기를 기도합니다."
 }
 ```
-
+---
 ### 4. 대화 기록 조회
 * Endpoint: ```GET```/history
 * 인증: ```Bearer``` 토큰 필요
@@ -162,7 +162,7 @@ uvicorn main:app --reload # 백엔드 파일명이 main.py일 때
 
 
 
-## 6. 개발 과정
+## 🗓️ 개발 과정
 
 ### WBS
 ```mermaid
