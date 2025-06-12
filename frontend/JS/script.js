@@ -14,7 +14,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const messageInput = document.getElementById("message-input");
   const messageDisplay = document.getElementById("message-display");
   const chatWindow = document.querySelector(".chat-window");
-  // ▼▼▼ 전송 버튼을 제어하기 위해 요소를 가져옵니다. ▼▼▼
   const submitButton = messageForm.querySelector("button");
 
   // 버튼 및 링크
@@ -72,7 +71,10 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail);
+
       alert("회원가입 성공! 로그인 페이지로 이동합니다.");
+      // ▼▼▼ 수정된 부분: 회원가입 성공 후 폼을 초기화합니다. ▼▼▼
+      resetAuthForms();
       showScreen("login");
     } catch (error) {
       alert(`회원가입 실패: ${error.message}`);
@@ -104,11 +106,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // 로그아웃
   logoutBtn.addEventListener("click", () => {
     localStorage.removeItem("authToken");
     localStorage.removeItem("userNickname");
     resetChatWindow();
-    initialize();
+    resetAuthForms();
+    initialize(); // 로그인 화면으로 전환
   });
 
   messageForm.addEventListener("submit", async (e) => {
@@ -116,7 +120,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const prompt = messageInput.value.trim();
     if (!prompt) return;
 
-    // ▼▼▼ 수정된 부분: 메시지 전송 시작 시 입력창과 버튼을 비활성화 ▼▼▼
     messageInput.disabled = true;
     submitButton.disabled = true;
     submitButton.textContent = "전송 중...";
@@ -140,12 +143,11 @@ document.addEventListener("DOMContentLoaded", () => {
         "오류가 발생했습니다.";
       loadingMessage.classList.remove("loading-message");
     } finally {
-      // ▼▼▼ 수정된 부분: API 호출이 성공하든 실패하든, 끝나면 다시 활성화 ▼▼▼
       messageInput.disabled = false;
       submitButton.disabled = false;
       submitButton.textContent = "전송";
-      messageInput.value = ""; // 입력창 초기화
-      messageInput.focus(); // 사용자가 바로 다음 입력을 할 수 있도록 포커스 이동
+      messageInput.value = "";
+      messageInput.focus();
       scrollToBottom();
     }
   });
@@ -258,7 +260,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function scrollToBottom(isInstant = false) {
     const behavior = isInstant ? "instant" : "smooth";
-    chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: behavior });
+    setTimeout(() => {
+      chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: behavior });
+    }, 0);
+  }
+
+  function resetAuthForms() {
+    loginForm.reset();
+    signupForm.reset();
   }
 
   // 앱 시작
