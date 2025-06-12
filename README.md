@@ -36,7 +36,7 @@ git clone https://github.com/GH-57/First_Project.git
 
 ### 2. 백엔드 설정
 
-### a. 가상환경 생성 및 활성화
+#### a. 가상환경 생성 및 활성화
 ```
 # 가상환경 생성
 python -m venv .venv
@@ -48,7 +48,7 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-### b. 필요 라이브러리 설치 
+#### b. 필요 라이브러리 설치 
 ```
 pip install "fastapi[all]" "passlib[bcrypt]" "python-jose[cryptography]" openai requests
 
@@ -59,11 +59,31 @@ pip install "fastapi[all]" "passlib[bcrypt]" "python-jose[cryptography]" openai 
 # requests: 프록시 서버와 직접 통신하기 위한 HTTP 요청 라이브러리
 ```
 
+#### c. OpenAI API 키 설정 (환경변수)
+* [중요!] 이 프로젝트는 부트캠프에서 제공하는 프록시 서버 (https://dev.wenivops.co.kr/services/openai-api)를 통해 OpenAI API를 호출한다
+* 제공받은 프로시 서버용 API키를 아래와 같이 환경 변수로 설정한다.
+```
+# Windows (CMD)
+set OPENAI_API_KEY="pk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Windows (PowerShell)
+$env:OPENAI_API_KEY="pk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# macOS/Linux
+export OPENAI_API_KEY="pk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+#### d. 백엔드 서버 실행
+```
+uvicorn main:app --reload # 백엔드 파일명이 main.py일 때
+```
+* 서버는 http://127.0.0.1:8000에서 실행된다.
+
+### 3. 프론트엔드 실행
+* VSCode의 Live Server 확장 프로그램을 사용하거나, frontend 폴더의 index.html 파일을 직접 웹 브라우저로 실행
 
 
+## 📖 API 문서
 
-### c. OpenAI API 키 설정 (환경변수)
-* 프로젝트를 시행할 터미널에서 OpenAI API키를 환경변수로 설정한다
 
 
 
