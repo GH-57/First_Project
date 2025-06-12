@@ -1,7 +1,7 @@
 # AI 잠언 챗봇 (Proverb-Recommending AI Chatbot)
 
 ### "오늘 기분은 어떠신가요?"
-* ChatGPT 서버 API를 연동하여 오늘의 기분을 분석하여 잠언 말씀을 추천함
+* 당신의 감정을 분석해, 지금 필요한 잠언 말쓰을 추천해드립니다.
 
 ## 🎯 프로젝트 소개
 
@@ -79,9 +79,9 @@ uvicorn main:app --reload # 백엔드 파일명이 main.py일 때
 * 서버는 http://127.0.0.1:8000에서 실행된다.
 
 ### 3. 프론트엔드 실행
-* VSCode의 Live Server 확장 프로그램을 사용하거나, frontend 폴더의 index.html 파일을 직접 웹 브라우저로 실행
+* `frontend` 폴더로 이동한 후, `index.html`을 브라우저에서 열거나 VSCode Live Server 확장으로 실행합니다.
 
-
+---
 ## 📖 API 문서
 * 백엔드 서버 실행 후, http://127.0.0.1:8000/docs 로 접속하면 모든 API 엔드포인트를 확인하고 직접 테스트 할 수 있는 SwaggerUI가 제공된다.
 
