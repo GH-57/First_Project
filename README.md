@@ -83,7 +83,43 @@ uvicorn main:app --reload # 백엔드 파일명이 main.py일 때
 
 
 ## 📖 API 문서
+* 백엔드 서버 실행 후, http://127.0.0.1:8000/docs 로 접속하면 모든 API 엔드포인트를 확인하고 직접 테스트 할 수 있는 SwaggerUI가 제공된다.
 
+### 1. 회원가입
+* Endpoint: ```POST```/register
+* 설명: 새로운 사용자를 생성한다.
+* 요청 본문 (Request Body):
+```
+{
+  "email": "test@naver.com",
+  "password": "1234",
+  "nickname": "테스트"
+}
+
+```
+* 성공 응답 (200 OK):
+```
+{
+  "message": "테스트님, 회원가입이 완료되었습니다."
+}
+```
+
+### 2. 로그인
+* Endpoint: ```POST```/login
+* 설명: 로그인하여 JWT인증 토큰을 발급받는다.
+* 요청 본문 (Request Body):
+    * username: "test@naver.com"
+    * password: "1234"
+* 성공 응답 (200 OK):
+```
+{
+  "access_token": "eyJhbGciOiJIUzI1Ni...",
+  "token_type": "bearer",
+  "nickname": "테스트"
+}
+```
+
+### 3. 채팅
 
 
 
