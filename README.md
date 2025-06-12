@@ -36,7 +36,7 @@ git clone https://github.com/GH-57/First_Project.git
 
 ### 2. 백엔드 설정
 
-#### a. 가상환경 생성 및 활성화
+### a. 가상환경 생성 및 활성화
 ```
 # 가상환경 생성
 python -m venv .venv
@@ -48,7 +48,7 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-#### b. 필요 라이브러리 설치 
+### b. 필요 라이브러리 설치 
 ```
 pip install "fastapi[all]" "passlib[bcrypt]" "python-jose[cryptography]" openai requests
 
@@ -59,8 +59,8 @@ pip install "fastapi[all]" "passlib[bcrypt]" "python-jose[cryptography]" openai 
 # requests: 프록시 서버와 직접 통신하기 위한 HTTP 요청 라이브러리
 ```
 
-#### c. OpenAI API 키 설정 (환경변수)
-* [중요!] 이 프로젝트는 부트캠프에서 제공하는 프록시 서버 (https://dev.wenivops.co.kr/services/openai-api)를 통해 OpenAI API를 호출한다
+### c. OpenAI API 키 설정 (환경변수)
+* [중요!] 이 프로젝트는 부트캠프에서 제공하는 프록시 서버 (https://dev.wenivops.co.kr/services/openai-api) 를 통해 OpenAI API를 호출한다
 * 제공받은 프로시 서버용 API키를 아래와 같이 환경 변수로 설정한다.
 ```
 # Windows (CMD)
@@ -72,7 +72,7 @@ $env:OPENAI_API_KEY="pk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 # macOS/Linux
 export OPENAI_API_KEY="pk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
-#### d. 백엔드 서버 실행
+### d. 백엔드 서버 실행
 ```
 uvicorn main:app --reload # 백엔드 파일명이 main.py일 때
 ```
