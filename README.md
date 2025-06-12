@@ -156,12 +156,6 @@ uvicorn main:app --reload # 백엔드 파일명이 main.py일 때
 ]
 ```
 
-
-
-
-
-
-
 ## 🗓️ 개발 과정
 
 ### WBS
