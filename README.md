@@ -51,13 +51,13 @@ source .venv/bin/activate
 ### b. 필요 라이브러리 설치 
 ```
 pip install "fastapi[all]" "passlib[bcrypt]" "python-jose[cryptography]" openai requests
-```
-* fastapi[all]: FastAPI 웹 프레임워크과 실행에 필요한 Uvicorn, Pydantic을 포함하는 묶음 라이브러리
-* passlib[bcrypt]: 비밀번호 해싱을 위한 라이브러리
-* python-jose[crytography]: JWT 토큰 생성 및 검증을 위한 라이브러리
-* openai: OpenAI API를 사용하기 위한 공식 라이브러리
-* requests: 프록시 서버와 직접 통신하기 위한 HTTP 요청 라이브러리
 
+# fastapi[all]: FastAPI 웹 프레임워크과 실행에 필요한 Uvicorn, Pydantic을 포함하는 묶음 라이브러리
+# passlib[bcrypt]: 비밀번호 해싱을 위한 라이브러리
+# python-jose[crytography]: JWT 토큰 생성 및 검증을 위한 라이브러리
+* openai: OpenAI API를 사용하기 위한 공식 라이브러리
+# requests: 프록시 서버와 직접 통신하기 위한 HTTP 요청 라이브러리
+```
 
 
 
